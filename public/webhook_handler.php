@@ -63,7 +63,7 @@ function handlePushEvent($data, $config)
             // Execute git pull command with error handling
             $output = [];
             $returnVar = 0;
-            exec("cd $projectPath && git checkout $branch && git pull origin $branch", $output, $returnVar);
+            exec("(cd $projectPath && git pull)", $output, $returnVar);
 
             // Check if the git pull command was successful and log the result
             if ($returnVar !== 0) {
