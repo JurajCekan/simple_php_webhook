@@ -60,8 +60,25 @@ function handlePushEvent($data, $config)
     foreach ($config['projects'] as $project) {
         if ($project['github_repository'] === $repository && $project['github_branch'] === $branch) {
             $projectPath = $project['project_path'];
-            // Execute git pull command
-            exec("cd $projectPath && git checkout $branch && git pull origin $branch");
+            // Execute git pull command with error handling
+            $output = [];
+            $returnVar = 0;
+            exec("cd $projectPath && git checkout $branch && git pull origin $branch", $output, $returnVar);
+
+            // Check if the git pull command was successful and log the result
+            if ($returnVar !== 0) {
+                $logMessage = sprintf(
+                    "[%s] Error executing git pull for project '%s' on branch '%s': %s\n",
+                    date('Y-m-d H:i:s'),
+                    $repository,
+                    $branch,
+                    implode("\n", $output)
+                );
+                file_put_contents($config['log_file'], $logMessage, FILE_APPEND);
+                http_response_code(500);
+                exit('Failed to execute git pull command');
+            }
+
             $projectFound = true;
             break;
         }
@@ -82,7 +99,7 @@ function handlePushEvent($data, $config)
 
     // Log push event
     $logMessage = sprintf(
-        "[%s] Push to '%s' on branch '%s'\n No matching project configuration found for GitHub project '%s' and branch '%s'\n",
+        "[%s] Push to '%s' on branch '%s' handled successfully\n",
         date('Y-m-d H:i:s'),
         $repository,
         $branch
@@ -91,3 +108,4 @@ function handlePushEvent($data, $config)
 
     echo "Push event handled successfully.";
 }
+?>
