@@ -14,7 +14,7 @@ $payload = file_get_contents('php://input');
 // Verify the signature to ensure the request is valid
 if (!verifySignature($payload, $signature, $secret)) {
     http_response_code(403);
-    file_put_contents('webhook_log.txt', "Signature verification failed\n", FILE_APPEND);
+    file_put_contents($config['log_file'], "Signature verification failed\n", FILE_APPEND);
     die('Signature verification failed.');
 }
 
