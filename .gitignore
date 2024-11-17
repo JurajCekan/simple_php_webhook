@@ -8,6 +8,7 @@
 
 # Ignore configuration file
 config.php
+config.json
 
 # Ignore logs folder
 logs/*.log

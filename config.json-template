@@ -1,0 +1,11 @@
+{
+    "secret": "your_secret_token_here",
+    "log_file": "path/to/your/log_file.log",
+    "projects": [
+        {
+            "github_repository": "your/repository_name",
+            "github_branch": "your_branch_name",
+            "project_path": "path/to/your/project"
+        }
+    ]
+}
