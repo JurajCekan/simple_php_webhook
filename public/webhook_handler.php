@@ -60,10 +60,11 @@ function handlePushEvent($data, $config)
     foreach ($config['projects'] as $project) {
         if ($project['github_repository'] === $repository && $project['github_branch'] === $branch) {
             $projectPath = $project['project_path'];
-            // Execute git pull command with error handling
+            // Change directory and execute git pull command with error handling
+            chdir($projectPath);
             $output = [];
             $returnVar = 0;
-            exec("(cd $projectPath && git pull)", $output, $returnVar);
+            exec("git pull", $output, $returnVar);
 
             // Check if the git pull command was successful and log the result
             if ($returnVar !== 0) {
