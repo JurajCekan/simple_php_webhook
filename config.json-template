@@ -1,16 +1,11 @@
 {
     "secret": "your_secret_token_here",
-    "log_file": "/path/to/webhook.log",
+    "log_file": "path/to/your/log_file.log",
     "projects": [
         {
-            "github_repository": "user/repo1",
-            "github_branch": "main",
-            "project_path": "/path/to/project1"
-        },
-        {
-            "github_repository": "user/repo2",
-            "github_branch": "develop",
-            "project_path": "/path/to/project2"
+            "github_repository": "your/repository_name",
+            "github_branch": "your_branch_name",
+            "project_path": "path/to/your/project"
         }
     ]
 }

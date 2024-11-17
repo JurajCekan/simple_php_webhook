@@ -1,6 +1,0 @@
-<?php
-// Configuration file
-
-// Define a secret token (must match the token set in GitHub)
-$secret = "your_secret_token_here";
-?>
