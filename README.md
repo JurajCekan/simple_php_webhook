@@ -16,7 +16,7 @@ Welcome to `simple_php_webhook` – the tool that's simple enough to set up and 
    - Ensure that the `public` directory is accessible by your web server and the public internet. This is where GitHub will send those sweet, sweet webhook payloads.
    - The **main directory** should **not** be directly accessible via the web. It contains sensitive configuration details (like your `secret` key) and you wouldn't want the internet to see that, right?
 
-4. **Point GitHub Webhook Here**: Set up a webhook in your GitHub repository to point to your server's publicly accessible URL (e.g., `https://your-domain.com/public/webhook_handler.php`). Don't forget to use the same `secret` key configured in `config.json`.
+4. **Point GitHub Webhook Here**: Set up a webhook in your GitHub repository to point to your server's publicly accessible URL (e.g., `https://your-domain.com/public/webhook_handler.php`). Make sure that the **Content-Type** is set to `application/json`. Don't forget to use the same `secret` key configured in `config.json`.
 
 ## 🔧 Configuration Values Explained
 
@@ -28,7 +28,7 @@ The configuration file (`config.json`) contains a few key settings that are crit
 
 - **`projects`**: This is an array of projects, each with their own configuration:
   - **`github_repository`**: The GitHub repository name (e.g., `<Username>/<Project_name>`).
-  - **`github_branch`**: The branch name you want to handle webhook requests for (`master`, etc.). Only requests from this branch will be processed.
+  - **`github_branch`**: The branch name you want to handle webhook requests for (e.g., `master`). Only requests from this branch will be processed.
   - **`project_path`**: The local path to the directory where the `git pull` command will be executed. This is where your code lives.
 
 ## 📝 Example Configuration
@@ -42,7 +42,7 @@ Here's a quick example of what `config.json` might look like:
     "projects": [
         {
             "github_repository": "your_username/your_project",
-            "github_branch": "main",
+            "github_branch": "master",
             "project_path": "/var/www/html/your_project"
         }
     ]
