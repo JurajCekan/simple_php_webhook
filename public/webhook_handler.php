@@ -119,6 +119,11 @@ function handlePushEvent($data, $config)
                 exec("php artisan view:cache");
                 // Enable Laravel route cache
                 exec("php artisan route:cache");
+                $logMessage = sprintf(
+                    "[%s] Cache successfully cleared on '%s'\n",
+                    date('Y-m-d H:i:s'),
+                    $repository
+                );
             }
 
             $projectFound = true;
