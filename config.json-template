@@ -5,7 +5,8 @@
         {
             "github_repository": "your/repository_name",
             "github_branch": "your_branch_name",
-            "project_path": "path/to/your/project"
+            "project_path": "path/to/your/project",
+            "laravel_clear_cache": false
         }
     ]
 }
