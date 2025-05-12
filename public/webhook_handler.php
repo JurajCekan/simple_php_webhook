@@ -108,6 +108,22 @@ function handlePushEvent($data, $config)
                 file_put_contents($config['log_file'], $logMessage, FILE_APPEND);
                 http_response_code(500);
                 exit('Failed to execute git pull command');
+            } else if (($project['laravel_cache'] ?? false)) {
+                // Clear Laravel cache
+                exec("php artisan cache:clear");
+                // Clear Laravel view cache
+                exec("php artisan view:clear");
+                // Clear Laravel route cache
+                exec("php artisan route:clear");
+                // Enable Laravel view cache
+                exec("php artisan view:cache");
+                // Enable Laravel route cache
+                exec("php artisan route:cache");
+                $logMessage = sprintf(
+                    "[%s] Cache successfully cleared on '%s'\n",
+                    date('Y-m-d H:i:s'),
+                    $repository
+                );
             }
 
             $projectFound = true;
