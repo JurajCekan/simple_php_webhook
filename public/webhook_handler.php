@@ -1,158 +1,51 @@
 <?php
-// Load configuration
-$config = json_decode(file_get_contents('../config.json'), true);
-if (!$config) {
-    http_response_code(500);
-    exit('Failed to load configuration.');
-}
-$secret = $config['secret'] ?? '';
-if (empty($secret)) {
-    http_response_code(500);
-    exit('Secret not found in configuration.');
+
+declare(strict_types=1);
+
+// Load Composer autoloader
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use SimplePhpWebhook\Config\ConfigLoader;
+use SimplePhpWebhook\Logger\WebhookLogger;
+use SimplePhpWebhook\Security\SignatureValidator;
+use SimplePhpWebhook\Shell\CommandExecutor;
+use SimplePhpWebhook\WebhookHandler;
+
+// 1. Define configuration path
+$configPath = __DIR__ . '/../config.json';
+
+// 2. Load raw config to determine the logging destination (fallback is logs/webhook_log.txt)
+$logFile = 'logs/webhook_log.txt';
+if (file_exists($configPath)) {
+    $rawConfig = json_decode(file_get_contents($configPath), true);
+    if (isset($rawConfig['log_file'])) {
+        $logFile = $rawConfig['log_file'];
+    }
 }
 
-// This script handles GitHub webhook events and responds accordingly
+// 3. Initialize components
+$configLoader = new ConfigLoader($configPath);
+$signatureValidator = new SignatureValidator();
+$executor = new CommandExecutor();
+$logger = new WebhookLogger($logFile);
 
-// Get the signature header from GitHub
-$signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
-if (empty($signature)) {
-    http_response_code(400);
-    exit('Missing signature header.');
-}
+$handler = new WebhookHandler(
+    $configLoader,
+    $signatureValidator,
+    $executor,
+    $logger
+);
 
-// Read the raw POST data from GitHub
+// 4. Capture request raw input
 $payload = file_get_contents('php://input');
 if ($payload === false) {
     http_response_code(400);
     exit('Failed to read payload.');
 }
 
-// Verify the signature to ensure the request is valid
-if (!verifySignature($payload, $signature, $secret)) {
-    http_response_code(403);
-    file_put_contents($config['log_file'], "Signature verification failed\n", FILE_APPEND);
-    exit('Signature verification failed.');
-}
+// 5. Delegate processing to the WebhookHandler controller
+$response = $handler->handle($_SERVER, $payload);
 
-// Decode the JSON payload
-$data = json_decode($payload, true);
-if (json_last_error() !== JSON_ERROR_NONE) {
-    http_response_code(400);
-    exit('Invalid JSON payload.');
-}
-
-// Handle the event
-if ($_SERVER['HTTP_X_GITHUB_EVENT'] == 'push') {
-    handlePushEvent($data, $config);
-} else {
-    http_response_code(400);
-    exit('Unsupported event type.');
-}
-
-/**
- * Verify the request signature
- *
- * @param string $payload
- * @param string $signature
- * @param string $secret
- * @return bool
- */
-function verifySignature($payload, $signature, $secret)
-{
-    $hash = 'sha256=' . hash_hmac('sha256', $payload, $secret, false);
-    return hash_equals($hash, $signature);
-}
-
-/**
- * Handle the push event from GitHub
- *
- * @param array $data
- * @param array $config
- * @return void
- */
-function handlePushEvent($data, $config)
-{
-    // Log the repository name and the branch that was pushed
-    $repository = $data['repository']['full_name'] ?? 'unknown';
-    $branch = explode('/', $data['ref'])[2] ?? 'unknown';
-
-    // Find the matching project in the configuration
-    $projectFound = false;
-    foreach ($config['projects'] as $project) {
-        if (($project['github_repository'] ?? '') === $repository && ($project['github_branch'] ?? '') === $branch) {
-            $projectPath = $project['project_path'] ?? '';
-            if (empty($projectPath) || !is_dir($projectPath)) {
-                http_response_code(500);
-                exit('Invalid project path in configuration.');
-            }
-
-            // Change directory and execute git pull command with error handling
-            if (!chdir($projectPath)) {
-                http_response_code(500);
-                exit('Failed to change directory to project path.');
-            }
-
-            $output = [];
-            $returnVar = 0;
-            exec("git pull origin $branch", $output, $returnVar);
-
-            // Check if the git pull command was successful and log the result
-            if ($returnVar !== 0) {
-                $logMessage = sprintf(
-                    "[%s] Error executing git pull for project '%s' on branch '%s': %s\n",
-                    date('Y-m-d H:i:s'),
-                    $repository,
-                    $branch,
-                    implode("\n", $output)
-                );
-                file_put_contents($config['log_file'], $logMessage, FILE_APPEND);
-                http_response_code(500);
-                exit('Failed to execute git pull command');
-            } else if (($project['laravel_cache'] ?? false)) {
-                // Clear Laravel cache
-                exec("php artisan cache:clear");
-                // Clear Laravel view cache
-                exec("php artisan view:clear");
-                // Clear Laravel route cache
-                exec("php artisan route:clear");
-                // Enable Laravel view cache
-                exec("php artisan view:cache");
-                // Enable Laravel route cache
-                exec("php artisan route:cache");
-                $logMessage = sprintf(
-                    "[%s] Cache successfully cleared on '%s'\n",
-                    date('Y-m-d H:i:s'),
-                    $repository
-                );
-            }
-
-            $projectFound = true;
-            break;
-        }
-    }
-
-    // Log if no matching project configuration is found
-    if (!$projectFound) {
-        $logMessage = sprintf(
-            "[%s] No matching project configuration found for GitHub project '%s' and branch '%s'\n",
-            date('Y-m-d H:i:s'),
-            $repository,
-            $branch
-        );
-        file_put_contents($config['log_file'], $logMessage, FILE_APPEND);
-        http_response_code(404);
-        exit('No matching project configuration found');
-    }
-
-    // Log push event
-    $logMessage = sprintf(
-        "[%s] Push to '%s' on branch '%s' handled successfully\n",
-        date('Y-m-d H:i:s'),
-        $repository,
-        $branch
-    );
-    file_put_contents($config['log_file'], $logMessage, FILE_APPEND);
-
-    echo "Push event handled successfully.";
-}
-?>
+// 6. Return response
+http_response_code($response['code']);
+echo $response['body'];
