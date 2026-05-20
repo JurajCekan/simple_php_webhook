@@ -12,3 +12,9 @@ config.json
 
 # Ignore logs folder
 logs/*.log
+
+# Composer dependencies
+/vendor/
+
+# PHPUnit cache
+/.phpunit.cache/

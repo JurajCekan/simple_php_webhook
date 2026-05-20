@@ -1,0 +1,2 @@
+# Prevent direct browser access to the project root directory under Apache 2.4
+Require all denied
