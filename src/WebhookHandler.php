@@ -92,13 +92,23 @@ class WebhookHandler
             ];
         }
 
-        // 5. Verify push event
+        // 5. Verify and handle event type
+        if ($event === 'ping') {
+            $zen = $data['zen'] ?? 'No zen found';
+            $this->logger->log(sprintf("Ping event received. Zen: %s", $zen));
+            return [
+                'code' => 200,
+                'body' => 'Ping event handled successfully.'
+            ];
+        }
+
         if ($event !== 'push') {
             return [
                 'code' => 400,
                 'body' => 'Unsupported event type.'
             ];
         }
+
 
         // 6. Parse Repository and Branch
         $repository = $data['repository']['full_name'] ?? 'unknown';
