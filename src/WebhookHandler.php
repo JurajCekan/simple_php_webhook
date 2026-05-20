@@ -92,10 +92,26 @@ class WebhookHandler
             ];
         }
 
-        // 5. Verify and handle event type
+        // 5. Parse Repository and Branch
+        $repository = $data['repository']['full_name'] ?? 'unknown';
+        $ref = $data['ref'] ?? '';
+        $branch = 'unknown';
+        if (str_starts_with($ref, 'refs/heads/')) {
+            $branch = substr($ref, 11);
+        } else {
+            $parts = explode('/', $ref);
+            $branch = $parts[count($parts) - 1] ?: 'unknown';
+        }
+
+        // 6. Verify and handle event type
         if ($event === 'ping') {
             $zen = $data['zen'] ?? 'No zen found';
-            $this->logger->log(sprintf("Ping event received. Zen: %s", $zen));
+            $this->logger->log(sprintf(
+                "Ping event received for repository '%s' on branch '%s'. Zen: %s",
+                $repository,
+                $branch,
+                $zen
+            ));
             return [
                 'code' => 200,
                 'body' => 'Ping event handled successfully.'
@@ -107,18 +123,6 @@ class WebhookHandler
                 'code' => 400,
                 'body' => 'Unsupported event type.'
             ];
-        }
-
-
-        // 6. Parse Repository and Branch
-        $repository = $data['repository']['full_name'] ?? 'unknown';
-        $ref = $data['ref'] ?? '';
-        $branch = 'unknown';
-        if (str_starts_with($ref, 'refs/heads/')) {
-            $branch = substr($ref, 11);
-        } else {
-            $parts = explode('/', $ref);
-            $branch = $parts[count($parts) - 1] ?: 'unknown';
         }
 
         // 7. Find Matching Configured Project
