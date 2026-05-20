@@ -2,8 +2,28 @@
 
 declare(strict_types=1);
 
-// Load Composer autoloader
-require_once __DIR__ . '/../vendor/autoload.php';
+// Load autoloader (prefer Composer's, fallback to a lightweight PSR-4 autoloader if vendor/ is missing in production)
+$autoloader = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($autoloader)) {
+    require_once $autoloader;
+} else {
+    spl_autoload_register(static function (string $class): void {
+        $prefix = 'SimplePhpWebhook\\';
+        $baseDir = __DIR__ . '/../src/';
+
+        $len = strlen($prefix);
+        if (strncmp($prefix, $class, $len) !== 0) {
+            return;
+        }
+
+        $relativeClass = substr($class, $len);
+        $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
+
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    });
+}
 
 use SimplePhpWebhook\Config\ConfigLoader;
 use SimplePhpWebhook\Logger\WebhookLogger;
